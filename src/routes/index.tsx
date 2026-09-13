@@ -222,12 +222,12 @@ function Index() {
         </section>
 
         <section aria-labelledby="priority-heading" className="mt-4">
-          <div className="flex items-center gap-2 overflow-x-auto pb-1">
-            <h2 id="priority-heading" className="shrink-0 text-xs font-semibold uppercase tracking-wider text-muted">Filter</h2>
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-1">
+            <h2 id="priority-heading" className="hidden shrink-0 text-[10px] font-semibold uppercase tracking-wider text-muted sm:block">Filter</h2>
             <div className="flex shrink-0 items-center gap-1">
               <button
                 onClick={() => setFilter("ALL")}
-                className={`rounded-full px-2.5 py-1 text-xs font-medium transition-colors ${filter === "ALL" ? "bg-primary text-primary-foreground" : "border border-line bg-surface text-ink hover:bg-background"}`}
+                className={`rounded-full px-2 py-1 text-[11px] font-medium transition-colors ${filter === "ALL" ? "bg-primary text-primary-foreground" : "border border-line bg-surface text-ink hover:bg-background"}`}
               >
                 All <span className="ml-0.5 opacity-80">{tasks.length}</span>
               </button>
@@ -235,7 +235,7 @@ function Index() {
                 <button
                   key={p}
                   onClick={() => setFilter(filter === p ? "ALL" : p)}
-                  className={`rounded-full px-2.5 py-1 text-xs font-medium transition-colors ${filter === p ? "bg-primary text-primary-foreground" : "border border-line bg-surface text-ink hover:bg-background"}`}
+                  className={`rounded-full px-2 py-1 text-[11px] font-medium transition-colors ${filter === p ? "bg-primary text-primary-foreground" : "border border-line bg-surface text-ink hover:bg-background"}`}
                 >
                   <span className="font-mono">{p === "IU" || p === "UNI" ? "**" : "*"} {p}</span>
                   <span className="ml-1 opacity-80">{counts[p]}</span>
