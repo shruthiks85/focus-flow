@@ -119,103 +119,49 @@ function Index() {
 
   return (
     <div className="min-h-screen bg-background text-ink">
-      <header className="sticky top-0 z-10 border-b border-line bg-background/95 backdrop-blur">
-        <div className="mx-auto flex h-14 max-w-5xl items-center justify-between gap-4 px-4 sm:px-6">
-          <div className="flex min-w-0 items-center gap-2.5">
-            <span className="grid size-6 shrink-0 place-items-center rounded-md bg-primary font-mono text-[11px] font-semibold text-primary-foreground">
-              IE
-            </span>
-            <div className="min-w-0 leading-none">
-              <p className="truncate font-display text-sm tracking-tight">Quadrant</p>
-              <p className="mt-0.5 font-mono text-[10px] text-muted">task dispatcher</p>
-            </div>
+      <header className="border-b border-line bg-surface">
+        <div className="mx-auto flex min-h-16 max-w-5xl items-center justify-between gap-4 px-4 py-3 sm:px-6">
+          <div>
+            <h1 className="text-xl font-semibold">Task Tracker</h1>
+            <p className="text-xs text-muted">{activeCount} active · {doneTodayCount} completed today</p>
           </div>
-          <div className="flex shrink-0 items-center gap-2">
-            <span className="hidden items-center gap-1.5 rounded-full bg-surface px-2.5 py-1 text-[11px] font-medium text-muted ring-1 ring-line sm:inline-flex">
-              <span className="size-1.5 rounded-full bg-iu" /> {dueTodayCount} due today
-            </span>
-            <button
-              onClick={() => formRef.current?.scrollIntoView({ behavior: "smooth", block: "center" })}
-              className="h-10 rounded-xl bg-ink px-4 text-sm font-semibold text-background transition-colors hover:bg-primary"
-            >
-              New task
-            </button>
-          </div>
+          <button onClick={() => formRef.current?.scrollIntoView({ behavior: "smooth", block: "center" })} className="h-10 rounded-lg bg-primary px-4 text-sm font-semibold text-primary-foreground transition-opacity hover:opacity-90">
+            Add task
+          </button>
         </div>
       </header>
 
-      <main className="mx-auto max-w-5xl px-4 pb-16 sm:px-6">
-        <section className="flex flex-wrap items-end justify-between gap-x-6 gap-y-3 pt-8 pb-6">
-          <div>
-            <p className="animate-rise font-mono text-[11px] uppercase tracking-[0.2em] text-muted">
-              Eisenhower dispatch
-            </p>
-            <h1 className="mt-2 animate-rise text-balance font-display text-5xl leading-[0.92] tracking-tighter sm:text-6xl">
-              Four boxes, one plan.
-            </h1>
-            <p className="mt-3 max-w-[42ch] animate-rise text-pretty text-muted">
-              Sort the day by what's truly important. Triage, act, and clear the list.
-            </p>
+      <main className="mx-auto max-w-5xl px-4 py-6 sm:px-6">
+        <section aria-labelledby="priority-heading" className="overflow-hidden rounded-lg border border-line bg-surface">
+          <div className="flex items-center justify-between border-b border-line px-4 py-3">
+            <h2 id="priority-heading" className="text-sm font-semibold">Priority legend</h2>
+            {filter !== "ALL" && <button onClick={() => setFilter("ALL")} className="text-xs font-medium text-primary">Show all tasks</button>}
           </div>
-          <div className="flex animate-rise gap-6">
-            <div>
-              <p className="font-display text-3xl tracking-tight">{activeCount}</p>
-              <p className="mt-1 font-mono text-[11px] text-muted">active</p>
-            </div>
-            <div>
-              <p className="font-display text-3xl tracking-tight">{doneTodayCount}</p>
-              <p className="mt-1 font-mono text-[11px] text-muted">done today</p>
-            </div>
+          <div className="divide-y divide-line">
+            {PRIORITIES.map((p) => (
+              <button key={p} onClick={() => setFilter(filter === p ? "ALL" : p)} className={`grid w-full grid-cols-[4.5rem_1fr_auto] items-center gap-2 px-4 py-2.5 text-left text-sm transition-colors hover:bg-background ${filter === p ? "bg-priority-selected" : ""}`}>
+                <strong className="font-mono text-primary">{p === "IU" || p === "UNI" ? "**" : "*"} {p}</strong>
+                <span>{PRIORITY_META[p].short}</span>
+                <span className="min-w-7 rounded-full bg-background px-2 py-0.5 text-center text-xs font-medium text-muted">{counts[p]}</span>
+              </button>
+            ))}
           </div>
         </section>
 
-        <section className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 sm:mx-0 sm:flex-wrap sm:px-0">
-          <button
-            onClick={() => setFilter("ALL")}
-            className={`flex shrink-0 items-center gap-2 rounded-xl py-2 pl-3 pr-3 text-sm font-semibold transition ${
-              filter === "ALL"
-                ? "bg-ink text-background"
-                : "bg-surface font-medium ring-1 ring-line hover:ring-primary/40"
-            }`}
-          >
-            All <span className="font-mono text-xs opacity-70">{tasks.length}</span>
-          </button>
-          {PRIORITIES.map((p) => (
-            <button
-              key={p}
-              onClick={() => setFilter(p)}
-              className={`flex shrink-0 items-center gap-2 rounded-xl py-2 pl-2 pr-3 text-sm transition ${
-                filter === p
-                  ? "bg-ink font-semibold text-background"
-                  : "bg-surface font-medium ring-1 ring-line hover:ring-primary/40"
-              }`}
-            >
-              <span className={`size-2.5 rounded-sm ${PRIORITY_META[p].dot}`} /> {p}{" "}
-              <span className={`font-mono text-xs ${filter === p ? "opacity-70" : "text-muted"}`}>
-                {counts[p]}
-              </span>
-            </button>
-          ))}
-        </section>
-
-        <p className="mt-4 flex flex-wrap gap-x-3 gap-y-1 font-mono text-[11px] text-muted">
-          {PRIORITIES.map((p) => (
-            <span key={p}>
-              {p} · {PRIORITY_META[p].short}
-            </span>
-          ))}
-        </p>
+        <section className="mt-6" aria-labelledby="tasks-heading">
+          <div className="mb-3 flex items-center justify-between">
+            <h2 id="tasks-heading" className="text-base font-semibold">{filter === "ALL" ? "All tasks" : `${filter} tasks`}</h2>
+            <span className="text-xs text-muted">{visible.length} {visible.length === 1 ? "task" : "tasks"}</span>
+          </div>
 
         {visible.length === 0 ? (
-          <section className="mt-5 rounded-2xl bg-surface p-10 text-center ring-1 ring-line">
-            <p className="font-display text-lg tracking-tight">Nothing here yet</p>
-            <p className="mt-2 text-sm text-muted">
-              Add your first task below — priority, subject, due date and action plan.
-            </p>
-          </section>
+          <div className="rounded-lg border border-line bg-surface px-5 py-10 text-center">
+            <p className="font-medium">No tasks yet</p>
+            <p className="mt-1 text-sm text-muted">Add a task using the form below.</p>
+          </div>
         ) : (
           <>
-            <section className="mt-5 hidden overflow-hidden rounded-2xl bg-surface ring-1 ring-line md:block">
+            <div className="hidden overflow-hidden rounded-lg border border-line bg-surface md:block">
               <div className="grid grid-cols-[2.5rem_6.5rem_1.5fr_7rem_2fr_6rem_6.5rem] items-center gap-3 border-b border-line px-4 py-2.5 font-mono text-[11px] uppercase tracking-wider text-muted">
                 <span>SL</span>
                 <span>Priority</span>
@@ -234,8 +180,7 @@ function Index() {
                     {String(i + 1).padStart(2, "0")}
                   </span>
                   <span className="inline-flex items-center gap-1.5">
-                    <span className={`size-2.5 rounded-sm ${PRIORITY_META[task.priority].dot}`} />
-                    <span className="font-mono text-xs font-semibold">{task.priority}</span>
+                    <span className="font-mono text-xs font-semibold text-primary">{task.priority === "IU" || task.priority === "UNI" ? "**" : "*"} {task.priority}</span>
                   </span>
                   <span className="truncate text-sm font-semibold">{task.subject}</span>
                   <span className="text-sm text-muted">{formatDate(task.dueDate)}</span>
@@ -246,39 +191,23 @@ function Index() {
                     {formatDate(task.completionDate)}
                   </span>
                   <span className="flex justify-end gap-1.5">
-                    <button
-                      onClick={() => startEdit(task)}
-                      className="rounded-lg px-2 py-1.5 font-mono text-[11px] font-semibold text-muted ring-1 ring-line transition-colors hover:text-ink"
-                    >
+                    <button onClick={() => startEdit(task)} className="rounded-md border border-line px-2 py-1.5 text-xs font-medium text-muted hover:text-ink">
                       Edit
                     </button>
-                    <button
-                      onClick={() => remove(task.id)}
-                      className="rounded-lg px-2 py-1.5 font-mono text-[11px] font-semibold text-muted ring-1 ring-line transition-colors hover:text-iu"
-                    >
-                      Del
+                    <button onClick={() => remove(task.id)} className="rounded-md border border-line px-2 py-1.5 text-xs font-medium text-muted hover:text-iu">
+                      Delete
                     </button>
                   </span>
                 </div>
               ))}
-            </section>
+            </div>
 
-            <section className="mt-5 space-y-3 md:hidden">
+            <div className="space-y-3 md:hidden">
               {visible.map((task) => (
-                <div
-                  key={task.id}
-                  className="flex animate-rise gap-3 rounded-2xl bg-surface p-4 ring-1 ring-line"
-                >
-                  <span
-                    className={`w-1 shrink-0 self-stretch rounded-full ${PRIORITY_META[task.priority].dot}`}
-                  />
+                <article key={task.id} className="rounded-lg border border-line bg-surface p-4">
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center justify-between gap-2">
-                      <span
-                        className={`font-mono text-[11px] font-semibold ${PRIORITY_META[task.priority].text}`}
-                      >
-                        {task.priority}
-                      </span>
+                      <strong className="font-mono text-xs text-primary">{task.priority === "IU" || task.priority === "UNI" ? "**" : "*"} {task.priority}</strong>
                       <span className="font-mono text-[11px] text-muted">
                         Due {formatDate(task.dueDate)}
                       </span>
@@ -293,30 +222,23 @@ function Index() {
                       </p>
                     ) : null}
                     <div className="mt-3 flex gap-2">
-                      <button
-                        onClick={() => startEdit(task)}
-                        className="h-10 rounded-xl bg-ink px-3.5 text-xs font-semibold text-background"
-                      >
+                      <button onClick={() => startEdit(task)} className="h-10 rounded-lg bg-primary px-4 text-xs font-semibold text-primary-foreground">
                         Edit
                       </button>
-                      <button
-                        onClick={() => remove(task.id)}
-                        className="h-10 rounded-xl bg-surface px-3.5 text-xs font-semibold text-muted ring-1 ring-line"
-                      >
+                      <button onClick={() => remove(task.id)} className="h-10 rounded-lg border border-line bg-surface px-4 text-xs font-semibold text-muted">
                         Delete
                       </button>
                     </div>
                   </div>
-                </div>
+                </article>
               ))}
-            </section>
+            </div>
           </>
         )}
+        </section>
 
-        <section ref={formRef} className="mt-8 rounded-2xl bg-surface p-5 ring-1 ring-line">
-          <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-muted">
-            {editingId ? "Edit task" : "Add a task"}
-          </p>
+        <section ref={formRef} className="mt-6 rounded-lg border border-line bg-surface p-4 sm:p-5">
+          <h2 className="text-base font-semibold">{editingId ? "Edit task" : "Add a task"}</h2>
           <div className="mt-4 grid grid-cols-2 gap-3 md:grid-cols-4">
             <label className="col-span-2 block md:col-span-1">
               <span className="text-[11px] font-medium text-muted">Priority</span>
@@ -370,9 +292,7 @@ function Index() {
             </label>
           </div>
           <div className="mt-4 flex items-center justify-between gap-3">
-            <p className="hidden text-[11px] text-muted sm:block">
-              Fields map 1:1 to your spreadsheet — nothing extra, nothing missing.
-            </p>
+            <p className="hidden text-xs text-muted sm:block">{dueTodayCount} unfinished {dueTodayCount === 1 ? "task is" : "tasks are"} due today.</p>
             <div className="ml-auto flex gap-2">
               {editingId ? (
                 <button
@@ -380,14 +300,14 @@ function Index() {
                     setEditingId(null);
                     setDraft(emptyDraft);
                   }}
-                  className="h-12 rounded-xl bg-surface px-4 text-sm font-semibold text-muted ring-1 ring-line"
+                  className="h-11 rounded-lg border border-line bg-surface px-4 text-sm font-semibold text-muted"
                 >
                   Cancel
                 </button>
               ) : null}
               <button
                 onClick={submit}
-                className="h-12 rounded-xl bg-primary px-6 text-sm font-bold text-primary-foreground transition-colors hover:bg-ink hover:text-background"
+                className="h-11 rounded-lg bg-primary px-6 text-sm font-semibold text-primary-foreground transition-opacity hover:opacity-90"
               >
                 {editingId ? "Save changes" : "Add task"}
               </button>
@@ -395,11 +315,8 @@ function Index() {
           </div>
         </section>
 
-        <footer className="mt-10 flex flex-wrap items-center justify-between gap-3 border-t border-line pt-5 font-mono text-[11px] text-muted">
-          <span>Quadrant · task dispatcher</span>
-          <span>
-            {tasks.length} tasks · {doneTodayCount} done today
-          </span>
+        <footer className="mt-8 border-t border-line pt-4 text-center text-xs text-muted">
+          {tasks.length} total {tasks.length === 1 ? "task" : "tasks"}
         </footer>
       </main>
     </div>
