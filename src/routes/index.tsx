@@ -132,22 +132,6 @@ function Index() {
       </header>
 
       <main className="mx-auto max-w-5xl px-4 py-6 sm:px-6">
-        <section aria-labelledby="priority-heading" className="overflow-hidden rounded-lg border border-line bg-surface">
-          <div className="flex items-center justify-between border-b border-line px-4 py-3">
-            <h2 id="priority-heading" className="text-sm font-semibold">Priority legend</h2>
-            {filter !== "ALL" && <button onClick={() => setFilter("ALL")} className="text-xs font-medium text-primary">Show all tasks</button>}
-          </div>
-          <div className="divide-y divide-line">
-            {PRIORITIES.map((p) => (
-              <button key={p} onClick={() => setFilter(filter === p ? "ALL" : p)} className={`grid w-full grid-cols-[4.5rem_1fr_auto] items-center gap-2 px-4 py-2.5 text-left text-sm transition-colors hover:bg-background ${filter === p ? "bg-priority-selected" : ""}`}>
-                <strong className="font-mono text-primary">{p === "IU" || p === "UNI" ? "**" : "*"} {p}</strong>
-                <span>{PRIORITY_META[p].short}</span>
-                <span className="min-w-7 rounded-full bg-background px-2 py-0.5 text-center text-xs font-medium text-muted">{counts[p]}</span>
-              </button>
-            ))}
-          </div>
-        </section>
-
         <section className="mt-6" aria-labelledby="tasks-heading">
           <div className="mb-3 flex items-center justify-between">
             <h2 id="tasks-heading" className="text-base font-semibold">{filter === "ALL" ? "All tasks" : `${filter} tasks`}</h2>
@@ -235,6 +219,22 @@ function Index() {
             </div>
           </>
         )}
+        </section>
+
+        <section aria-labelledby="priority-heading" className="mt-6">
+          <div className="mb-3 flex items-center justify-between">
+            <h2 id="priority-heading" className="text-base font-semibold">Priority legend</h2>
+            {filter !== "ALL" && <button onClick={() => setFilter("ALL")} className="text-xs font-medium text-primary">Show all tasks</button>}
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {PRIORITIES.map((p) => (
+              <button key={p} onClick={() => setFilter(filter === p ? "ALL" : p)} className={`flex items-center gap-2 rounded-lg border px-3 py-2 text-sm transition-colors ${filter === p ? "border-primary bg-priority-selected" : "border-line bg-surface hover:bg-background"}`}>
+                <span className="font-mono text-primary">{p === "IU" || p === "UNI" ? "**" : "*"} {p}</span>
+                <span className="hidden sm:inline text-muted">{PRIORITY_META[p].short}</span>
+                <span className="min-w-6 rounded-full bg-background px-2 py-0.5 text-center text-xs font-medium text-muted">{counts[p]}</span>
+              </button>
+            ))}
+          </div>
         </section>
 
         <section ref={formRef} className="mt-6 rounded-lg border border-line bg-surface p-4 sm:p-5">
