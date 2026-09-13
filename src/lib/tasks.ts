@@ -7,26 +7,26 @@ export const PRIORITY_META: Record<
   { label: string; short: string; dot: string; text: string }
 > = {
   IU: {
-    label: "IU — Important & Urgent",
-    short: "Important & Urgent",
+    label: "** IU — Important",
+    short: "Important",
     dot: "bg-iu",
     text: "text-iu",
   },
   UNI: {
-    label: "UNI — Urgent & Not Important",
-    short: "Urgent & Not Important",
+    label: "** UNI — Urgent not Important",
+    short: "Urgent not Important",
     dot: "bg-uni",
     text: "text-uni",
   },
   INU: {
-    label: "INU — Important & Not Urgent",
-    short: "Important & Not Urgent",
+    label: "* INU — Important not Urgent",
+    short: "Important not Urgent",
     dot: "bg-inu",
     text: "text-inu",
   },
   NINU: {
-    label: "NINU — Not Important, Not Urgent",
-    short: "Not Important, Not Urgent",
+    label: "* NINU — Not Important, not Urgent",
+    short: "Not Important, not Urgent",
     dot: "bg-ninu",
     text: "text-ninu",
   },
