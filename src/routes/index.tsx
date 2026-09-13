@@ -221,19 +221,27 @@ function Index() {
         )}
         </section>
 
-        <section aria-labelledby="priority-heading" className="mt-6">
-          <div className="mb-3 flex items-center justify-between">
-            <h2 id="priority-heading" className="text-base font-semibold">Priority legend</h2>
-            {filter !== "ALL" && <button onClick={() => setFilter("ALL")} className="text-xs font-medium text-primary">Show all tasks</button>}
-          </div>
-          <div className="flex flex-wrap gap-2">
-            {PRIORITIES.map((p) => (
-              <button key={p} onClick={() => setFilter(filter === p ? "ALL" : p)} className={`flex items-center gap-2 rounded-lg border px-3 py-2 text-sm transition-colors ${filter === p ? "border-primary bg-priority-selected" : "border-line bg-surface hover:bg-background"}`}>
-                <span className="font-mono text-primary">{p === "IU" || p === "UNI" ? "**" : "*"} {p}</span>
-                <span className="hidden sm:inline text-muted">{PRIORITY_META[p].short}</span>
-                <span className="min-w-6 rounded-full bg-background px-2 py-0.5 text-center text-xs font-medium text-muted">{counts[p]}</span>
+        <section aria-labelledby="priority-heading" className="mt-4">
+          <div className="flex items-center gap-2 overflow-x-auto pb-1">
+            <h2 id="priority-heading" className="shrink-0 text-xs font-semibold uppercase tracking-wider text-muted">Filter</h2>
+            <div className="flex shrink-0 items-center gap-1">
+              <button
+                onClick={() => setFilter("ALL")}
+                className={`rounded-full px-2.5 py-1 text-xs font-medium transition-colors ${filter === "ALL" ? "bg-primary text-primary-foreground" : "border border-line bg-surface text-ink hover:bg-background"}`}
+              >
+                All <span className="ml-0.5 opacity-80">{tasks.length}</span>
               </button>
-            ))}
+              {PRIORITIES.map((p) => (
+                <button
+                  key={p}
+                  onClick={() => setFilter(filter === p ? "ALL" : p)}
+                  className={`rounded-full px-2.5 py-1 text-xs font-medium transition-colors ${filter === p ? "bg-primary text-primary-foreground" : "border border-line bg-surface text-ink hover:bg-background"}`}
+                >
+                  <span className="font-mono">{p === "IU" || p === "UNI" ? "**" : "*"} {p}</span>
+                  <span className="ml-1 opacity-80">{counts[p]}</span>
+                </button>
+              ))}
+            </div>
           </div>
         </section>
 
