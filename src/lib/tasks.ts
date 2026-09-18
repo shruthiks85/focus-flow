@@ -7,7 +7,7 @@ export const PRIORITY_META: Record<
   { label: string; short: string; dot: string; text: string }
 > = {
   IU: {
-    label: "** IU — Important",
+    label: "*** IU — Important",
     short: "Important",
     dot: "bg-iu",
     text: "text-iu",
