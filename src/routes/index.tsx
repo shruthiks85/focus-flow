@@ -52,6 +52,39 @@ const emptyDraft: Draft = {
 
 const PAGE_SIZE = 6;
 
+const SEARCH_COLUMNS = [
+  { value: "ALL", label: "All columns" },
+  { value: "priority", label: "Priority" },
+  { value: "subject", label: "Subject" },
+  { value: "dueDate", label: "Due date" },
+  { value: "actionPlan", label: "Action plan" },
+  { value: "completionDate", label: "Completed" },
+] as const;
+
+type SearchColumn = (typeof SEARCH_COLUMNS)[number]["value"];
+
+function columnText(task: Task, column: SearchColumn) {
+  if (column === "ALL") {
+    return [
+      task.priority,
+      PRIORITY_META[task.priority].short,
+      task.subject,
+      task.dueDate,
+      formatDate(task.dueDate),
+      task.actionPlan,
+      task.completionDate,
+      formatDate(task.completionDate),
+    ].join(" ");
+  }
+  if (column === "priority") {
+    return `${task.priority} ${PRIORITY_META[task.priority].short}`;
+  }
+  if (column === "dueDate") return `${task.dueDate} ${formatDate(task.dueDate)}`;
+  if (column === "completionDate")
+    return `${task.completionDate} ${formatDate(task.completionDate)}`;
+  return task[column];
+}
+
 function priorityMark(priority: Priority) {
   return priority === "IU" || priority === "UNI" ? "**" : "*";
 }
