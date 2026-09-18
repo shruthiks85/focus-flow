@@ -1,7 +1,6 @@
 import { MOCK_TASKS } from "./mock-tasks";
 
 export const PRIORITIES = ["IU", "UNI", "INU", "NINU"] as const;
-
 export type Priority = (typeof PRIORITIES)[number];
 
 export const PRIORITY_META: Record<Priority, { label: string; short: string; dot: string; text: string }> = {
@@ -21,16 +20,18 @@ export type Task = {
 };
 
 const STORAGE_KEY = "quadrant.tasks.v1";
+const defaultTasks = () => MOCK_TASKS.map((task) => ({ ...task }));
 
 export function loadTasks(): Task[] {
-  if (typeof window === "undefined") return [];
+  if (typeof window === "undefined") return defaultTasks();
   try {
     const raw = window.localStorage.getItem(STORAGE_KEY);
-    if (!raw) return MOCK_TASKS.map((task) => ({ ...task }));
+    if (!raw) return defaultTasks();
     const parsed = JSON.parse(raw) as Task[];
-    return Array.isArray(parsed) ? parsed : MOCK_TASKS.map((task) => ({ ...task }));
+    // Treat an old empty store as a first launch so the demo is visible immediately.
+    return Array.isArray(parsed) && parsed.length > 0 ? parsed : defaultTasks();
   } catch {
-    return MOCK_TASKS.map((task) => ({ ...task }));
+    return defaultTasks();
   }
 }
 
@@ -40,9 +41,9 @@ export function saveTasks(tasks: Task[]) {
 
 export function formatDate(value: string) {
   if (!value) return "—";
-  const d = new Date(`${value}T00:00:00`);
-  if (Number.isNaN(d.getTime())) return value;
-  return d.toLocaleDateString("en-US", { month: "short", day: "2-digit", year: "numeric" });
+  const date = new Date(`${value}T00:00:00`);
+  if (Number.isNaN(date.getTime())) return value;
+  return date.toLocaleDateString("en-US", { month: "short", day: "2-digit", year: "numeric" });
 }
 
 export function isToday(value: string) {
