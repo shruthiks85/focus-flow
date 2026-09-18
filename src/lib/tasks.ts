@@ -19,7 +19,8 @@ export type Task = {
   completionDate: string;
 };
 
-const STORAGE_KEY = "quadrant.tasks.v1";
+// v2 intentionally gives existing browsers a fresh demo dataset after the mock-data change.
+const STORAGE_KEY = "quadrant.tasks.v2";
 const defaultTasks = () => MOCK_TASKS.map((task) => ({ ...task }));
 
 export function loadTasks(): Task[] {
@@ -28,7 +29,6 @@ export function loadTasks(): Task[] {
     const raw = window.localStorage.getItem(STORAGE_KEY);
     if (!raw) return defaultTasks();
     const parsed = JSON.parse(raw) as Task[];
-    // Treat an old empty store as a first launch so the demo is visible immediately.
     return Array.isArray(parsed) && parsed.length > 0 ? parsed : defaultTasks();
   } catch {
     return defaultTasks();
