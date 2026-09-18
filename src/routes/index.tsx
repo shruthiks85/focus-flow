@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { ChevronLeft, ChevronRight, Pencil, Plus, Trash2 } from "lucide-react";
+import { ChevronLeft, ChevronRight, Pencil, Plus, Search, Trash2 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -52,6 +52,39 @@ const emptyDraft: Draft = {
 
 const PAGE_SIZE = 6;
 
+const SEARCH_COLUMNS = [
+  { value: "ALL", label: "All columns" },
+  { value: "priority", label: "Priority" },
+  { value: "subject", label: "Subject" },
+  { value: "dueDate", label: "Due date" },
+  { value: "actionPlan", label: "Action plan" },
+  { value: "completionDate", label: "Completed" },
+] as const;
+
+type SearchColumn = (typeof SEARCH_COLUMNS)[number]["value"];
+
+function columnText(task: Task, column: SearchColumn) {
+  if (column === "ALL") {
+    return [
+      task.priority,
+      PRIORITY_META[task.priority].short,
+      task.subject,
+      task.dueDate,
+      formatDate(task.dueDate),
+      task.actionPlan,
+      task.completionDate,
+      formatDate(task.completionDate),
+    ].join(" ");
+  }
+  if (column === "priority") {
+    return `${task.priority} ${PRIORITY_META[task.priority].short}`;
+  }
+  if (column === "dueDate") return `${task.dueDate} ${formatDate(task.dueDate)}`;
+  if (column === "completionDate")
+    return `${task.completionDate} ${formatDate(task.completionDate)}`;
+  return task[column];
+}
+
 function priorityMark(priority: Priority) {
   return priority === "IU" || priority === "UNI" ? "**" : "*";
 }
@@ -61,6 +94,8 @@ function Index() {
   const [hydrated, setHydrated] = useState(false);
   const [filter, setFilter] = useState<Priority | "ALL">("ALL");
   const [page, setPage] = useState(1);
+  const [search, setSearch] = useState("");
+  const [searchColumn, setSearchColumn] = useState<SearchColumn>("ALL");
   const [draft, setDraft] = useState<Draft>(emptyDraft);
   const [editingId, setEditingId] = useState<string | null>(null);
   const formRef = useRef<HTMLElement | null>(null);
@@ -80,10 +115,15 @@ function Index() {
     return base;
   }, [tasks]);
 
-  const filteredTasks = useMemo(
-    () => (filter === "ALL" ? tasks : tasks.filter((task) => task.priority === filter)),
-    [tasks, filter],
-  );
+  const filteredTasks = useMemo(() => {
+    const terms = search.toLowerCase().split(/[\s,]+/).filter(Boolean);
+    return tasks.filter((task) => {
+      if (filter !== "ALL" && task.priority !== filter) return false;
+      if (terms.length === 0) return true;
+      const haystack = columnText(task, searchColumn).toLowerCase();
+      return terms.every((term) => haystack.includes(term));
+    });
+  }, [tasks, filter, search, searchColumn]);
   const totalPages = Math.max(1, Math.ceil(filteredTasks.length / PAGE_SIZE));
   const currentPage = Math.min(page, totalPages);
   const pageTasks = filteredTasks.slice(
@@ -171,12 +211,53 @@ function Index() {
                 <h2 id="tasks-heading" className="text-base font-semibold">Tasks</h2>
                 <p className="mt-0.5 text-xs text-muted">View and manage your priority list</p>
               </div>
-              {filter !== "ALL" ? (
-                <Button variant="ghost" size="sm" onClick={() => chooseFilter("ALL")}>
-                  Clear filter
+              {filter !== "ALL" || search ? (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    chooseFilter("ALL");
+                    setSearch("");
+                    setSearchColumn("ALL");
+                  }}
+                >
+                  Clear filters
                 </Button>
               ) : null}
             </div>
+
+            <div className="mt-4 flex flex-col gap-2 sm:flex-row">
+              <div className="relative flex-1">
+                <Search aria-hidden="true" className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted" />
+                <input
+                  value={search}
+                  onChange={(event) => {
+                    setSearch(event.target.value);
+                    setPage(1);
+                  }}
+                  className="field pl-9"
+                  placeholder="Search tasks — type 2 or more keywords"
+                  aria-label="Search tasks"
+                />
+              </div>
+              <label className="sm:w-52">
+                <span className="sr-only">Search column</span>
+                <select
+                  value={searchColumn}
+                  onChange={(event) => {
+                    setSearchColumn(event.target.value as SearchColumn);
+                    setPage(1);
+                  }}
+                  className="field"
+                  aria-label="Search column"
+                >
+                  {SEARCH_COLUMNS.map((column) => (
+                    <option key={column.value} value={column.value}>{column.label}</option>
+                  ))}
+                </select>
+              </label>
+            </div>
+
 
             <div className="mt-4 flex items-center gap-1 overflow-x-auto pb-1" aria-label="Filter tasks by priority">
               <Button
