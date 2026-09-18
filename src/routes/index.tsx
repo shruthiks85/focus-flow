@@ -1,5 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { ChevronLeft, ChevronRight, Pencil, Plus, Trash2 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { Button } from "@/components/ui/button";
 import {
   PRIORITIES,
   PRIORITY_META,
@@ -14,17 +16,16 @@ import {
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Quadrant — Eisenhower Task Tracker" },
+      { title: "Quadrant — Simple Priority Task Tracker" },
       {
         name: "description",
         content:
-          "Track tasks by priority (IU, UNI, INU, NINU) with subject, due date, action plan and completion date. Works on desktop and mobile.",
+          "Add, update, filter and paginate tasks by IU, UNI, INU and NINU priority.",
       },
-      { property: "og:title", content: "Quadrant — Eisenhower Task Tracker" },
+      { property: "og:title", content: "Quadrant — Simple Priority Task Tracker" },
       {
         property: "og:description",
-        content:
-          "Sort your day into four priority boxes. Add, edit and clear tasks from any device.",
+        content: "A simple priority-first task list for desktop and mobile.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
@@ -49,10 +50,17 @@ const emptyDraft: Draft = {
   completionDate: "",
 };
 
+const PAGE_SIZE = 6;
+
+function priorityMark(priority: Priority) {
+  return priority === "IU" || priority === "UNI" ? "**" : "*";
+}
+
 function Index() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [hydrated, setHydrated] = useState(false);
   const [filter, setFilter] = useState<Priority | "ALL">("ALL");
+  const [page, setPage] = useState(1);
   const [draft, setDraft] = useState<Draft>(emptyDraft);
   const [editingId, setEditingId] = useState<string | null>(null);
   const formRef = useRef<HTMLElement | null>(null);
@@ -68,29 +76,47 @@ function Index() {
 
   const counts = useMemo(() => {
     const base: Record<Priority, number> = { IU: 0, UNI: 0, INU: 0, NINU: 0 };
-    for (const t of tasks) base[t.priority] += 1;
+    for (const task of tasks) base[task.priority] += 1;
     return base;
   }, [tasks]);
 
-  const visible = useMemo(
-    () => (filter === "ALL" ? tasks : tasks.filter((t) => t.priority === filter)),
+  const filteredTasks = useMemo(
+    () => (filter === "ALL" ? tasks : tasks.filter((task) => task.priority === filter)),
     [tasks, filter],
   );
+  const totalPages = Math.max(1, Math.ceil(filteredTasks.length / PAGE_SIZE));
+  const currentPage = Math.min(page, totalPages);
+  const pageTasks = filteredTasks.slice(
+    (currentPage - 1) * PAGE_SIZE,
+    currentPage * PAGE_SIZE,
+  );
+  const firstResult = filteredTasks.length === 0 ? 0 : (currentPage - 1) * PAGE_SIZE + 1;
+  const lastResult = Math.min(currentPage * PAGE_SIZE, filteredTasks.length);
+  const activeCount = tasks.filter((task) => !task.completionDate).length;
+  const doneTodayCount = tasks.filter((task) => isToday(task.completionDate)).length;
+  const dueTodayCount = tasks.filter(
+    (task) => isToday(task.dueDate) && !task.completionDate,
+  ).length;
 
-  const activeCount = tasks.filter((t) => !t.completionDate).length;
-  const doneTodayCount = tasks.filter((t) => isToday(t.completionDate)).length;
-  const dueTodayCount = tasks.filter((t) => isToday(t.dueDate) && !t.completionDate).length;
+  function chooseFilter(nextFilter: Priority | "ALL") {
+    setFilter(nextFilter);
+    setPage(1);
+  }
 
   function submit() {
     if (!draft.subject.trim()) return;
     if (editingId) {
-      setTasks((prev) =>
-        prev.map((t) => (t.id === editingId ? { ...t, ...draft, subject: draft.subject.trim() } : t)),
+      setTasks((previous) =>
+        previous.map((task) =>
+          task.id === editingId
+            ? { ...task, ...draft, subject: draft.subject.trim() }
+            : task,
+        ),
       );
       setEditingId(null);
     } else {
-      setTasks((prev) => [
-        ...prev,
+      setTasks((previous) => [
+        ...previous,
         { id: crypto.randomUUID(), ...draft, subject: draft.subject.trim() },
       ]);
     }
@@ -110,7 +136,7 @@ function Index() {
   }
 
   function remove(id: string) {
-    setTasks((prev) => prev.filter((t) => t.id !== id));
+    setTasks((previous) => previous.filter((task) => task.id !== id));
     if (editingId === id) {
       setEditingId(null);
       setDraft(emptyDraft);
@@ -120,212 +146,210 @@ function Index() {
   return (
     <div className="min-h-screen bg-background text-ink">
       <header className="border-b border-line bg-surface">
-        <div className="mx-auto flex min-h-16 max-w-5xl items-center justify-between gap-4 px-4 py-3 sm:px-6">
+        <div className="mx-auto flex min-h-16 max-w-6xl items-center justify-between gap-4 px-4 sm:px-6">
           <div>
-            <h1 className="text-xl font-semibold">Task Tracker</h1>
-            <p className="text-xs text-muted">{activeCount} active · {doneTodayCount} completed today</p>
+            <h1 className="text-lg font-semibold">Task Tracker</h1>
+            <p className="text-xs text-muted">
+              {activeCount} active · {doneTodayCount} completed today
+            </p>
           </div>
-          <button onClick={() => formRef.current?.scrollIntoView({ behavior: "smooth", block: "center" })} className="h-10 rounded-lg bg-primary px-4 text-sm font-semibold text-primary-foreground transition-opacity hover:opacity-90">
+          <Button
+            onClick={() => formRef.current?.scrollIntoView({ behavior: "smooth", block: "center" })}
+            size="sm"
+          >
+            <Plus aria-hidden="true" />
             Add task
-          </button>
+          </Button>
         </div>
       </header>
 
-      <main className="mx-auto max-w-5xl px-4 py-6 sm:px-6">
-        <section className="mt-6" aria-labelledby="tasks-heading">
-          <div className="mb-3 flex items-center justify-between">
-            <h2 id="tasks-heading" className="text-base font-semibold">{filter === "ALL" ? "All tasks" : `${filter} tasks`}</h2>
-            <span className="text-xs text-muted">{visible.length} {visible.length === 1 ? "task" : "tasks"}</span>
-          </div>
-
-        {visible.length === 0 ? (
-          <div className="rounded-lg border border-line bg-surface px-5 py-10 text-center">
-            <p className="font-medium">No tasks yet</p>
-            <p className="mt-1 text-sm text-muted">Add a task using the form below.</p>
-          </div>
-        ) : (
-          <>
-            <div className="hidden overflow-hidden rounded-lg border border-line bg-surface md:block">
-              <div className="grid grid-cols-[2.5rem_6.5rem_1.5fr_7rem_2fr_6rem_6.5rem] items-center gap-3 border-b border-line px-4 py-2.5 font-mono text-[11px] uppercase tracking-wider text-muted">
-                <span>SL</span>
-                <span>Priority</span>
-                <span>Subject</span>
-                <span>Due</span>
-                <span>Action plan</span>
-                <span>Finished</span>
-                <span className="text-right">Actions</span>
+      <main className="mx-auto max-w-6xl px-4 py-5 sm:px-6 sm:py-7">
+        <section aria-labelledby="tasks-heading" className="overflow-hidden rounded-lg border border-line bg-surface">
+          <div className="border-b border-line px-4 py-4 sm:px-5">
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <h2 id="tasks-heading" className="text-base font-semibold">Tasks</h2>
+                <p className="mt-0.5 text-xs text-muted">View and manage your priority list</p>
               </div>
-              {visible.map((task, i) => (
-                <div
-                  key={task.id}
-                  className="grid animate-rise grid-cols-[2.5rem_6.5rem_1.5fr_7rem_2fr_6rem_6.5rem] items-center gap-3 border-b border-line px-4 py-3 last:border-b-0"
-                >
-                  <span className="font-mono text-xs text-muted">
-                    {String(i + 1).padStart(2, "0")}
-                  </span>
-                  <span className="inline-flex items-center gap-1.5">
-                    <span className="font-mono text-xs font-semibold text-primary">{task.priority === "IU" || task.priority === "UNI" ? "**" : "*"} {task.priority}</span>
-                  </span>
-                  <span className="truncate text-sm font-semibold">{task.subject}</span>
-                  <span className="text-sm text-muted">{formatDate(task.dueDate)}</span>
-                  <span className="truncate text-sm text-muted">{task.actionPlan || "—"}</span>
-                  <span
-                    className={`text-sm ${task.completionDate ? "font-medium" : "text-muted"}`}
-                  >
-                    {formatDate(task.completionDate)}
-                  </span>
-                  <span className="flex justify-end gap-1.5">
-                    <button onClick={() => startEdit(task)} className="rounded-md border border-line px-2 py-1.5 text-xs font-medium text-muted hover:text-ink">
-                      Edit
-                    </button>
-                    <button onClick={() => remove(task.id)} className="rounded-md border border-line px-2 py-1.5 text-xs font-medium text-muted hover:text-iu">
-                      Delete
-                    </button>
-                  </span>
-                </div>
-              ))}
+              {filter !== "ALL" ? (
+                <Button variant="ghost" size="sm" onClick={() => chooseFilter("ALL")}>
+                  Clear filter
+                </Button>
+              ) : null}
             </div>
 
-            <div className="space-y-3 md:hidden">
-              {visible.map((task) => (
-                <article key={task.id} className="rounded-lg border border-line bg-surface p-4">
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center justify-between gap-2">
-                      <strong className="font-mono text-xs text-primary">{task.priority === "IU" || task.priority === "UNI" ? "**" : "*"} {task.priority}</strong>
-                      <span className="font-mono text-[11px] text-muted">
-                        Due {formatDate(task.dueDate)}
-                      </span>
-                    </div>
-                    <p className="mt-1 text-[15px] font-semibold leading-snug">{task.subject}</p>
-                    {task.actionPlan ? (
-                      <p className="mt-1 text-sm leading-snug text-muted">{task.actionPlan}</p>
-                    ) : null}
-                    {task.completionDate ? (
-                      <p className="mt-1 font-mono text-[11px] text-muted">
-                        Finished {formatDate(task.completionDate)}
-                      </p>
-                    ) : null}
-                    <div className="mt-3 flex gap-2">
-                      <button onClick={() => startEdit(task)} className="h-10 rounded-lg bg-primary px-4 text-xs font-semibold text-primary-foreground">
-                        Edit
-                      </button>
-                      <button onClick={() => remove(task.id)} className="h-10 rounded-lg border border-line bg-surface px-4 text-xs font-semibold text-muted">
-                        Delete
-                      </button>
-                    </div>
-                  </div>
-                </article>
-              ))}
-            </div>
-          </>
-        )}
-        </section>
-
-        <section aria-labelledby="priority-heading" className="mt-4">
-          <div className="flex items-center gap-1.5 overflow-x-auto pb-1">
-            <h2 id="priority-heading" className="hidden shrink-0 text-[10px] font-semibold uppercase tracking-wider text-muted sm:block">Filter</h2>
-            <div className="flex shrink-0 items-center gap-1">
-              <button
-                onClick={() => setFilter("ALL")}
-                className={`rounded-full px-2 py-1 text-[11px] font-medium transition-colors ${filter === "ALL" ? "bg-primary text-primary-foreground" : "border border-line bg-surface text-ink hover:bg-background"}`}
+            <div className="mt-4 flex items-center gap-1 overflow-x-auto pb-1" aria-label="Filter tasks by priority">
+              <Button
+                size="sm"
+                variant={filter === "ALL" ? "default" : "outline"}
+                onClick={() => chooseFilter("ALL")}
+                aria-pressed={filter === "ALL"}
+                className="shrink-0"
               >
-                All <span className="ml-0.5 opacity-80">{tasks.length}</span>
-              </button>
-              {PRIORITIES.map((p) => (
-                <button
-                  key={p}
-                  onClick={() => setFilter(filter === p ? "ALL" : p)}
-                  className={`rounded-full px-2 py-1 text-[11px] font-medium transition-colors ${filter === p ? "bg-primary text-primary-foreground" : "border border-line bg-surface text-ink hover:bg-background"}`}
+                All <span className="opacity-70">{tasks.length}</span>
+              </Button>
+              {PRIORITIES.map((priority) => (
+                <Button
+                  key={priority}
+                  size="sm"
+                  variant={filter === priority ? "default" : "outline"}
+                  onClick={() => chooseFilter(priority)}
+                  aria-pressed={filter === priority}
+                  className="shrink-0"
                 >
-                  <span className="font-mono">{p === "IU" || p === "UNI" ? "**" : "*"} {p}</span>
-                  <span className="ml-1 opacity-80">{counts[p]}</span>
-                </button>
+                  <span className="font-mono">{priorityMark(priority)} {priority}</span>
+                  <span className="opacity-70">{counts[priority]}</span>
+                </Button>
               ))}
             </div>
           </div>
+
+          {pageTasks.length === 0 ? (
+            <div className="px-5 py-14 text-center">
+              <p className="text-sm font-medium">No tasks found</p>
+              <p className="mt-1 text-xs text-muted">
+                {filter === "ALL" ? "Add your first task below." : "Try another priority filter."}
+              </p>
+            </div>
+          ) : (
+            <>
+              <div className="hidden overflow-x-auto md:block">
+                <table className="w-full table-fixed text-left">
+                  <thead className="bg-subtle text-[11px] uppercase text-muted">
+                    <tr>
+                      <th className="w-[9%] px-4 py-3 font-medium">Priority</th>
+                      <th className="w-[22%] px-4 py-3 font-medium">Subject</th>
+                      <th className="w-[12%] px-4 py-3 font-medium">Due date</th>
+                      <th className="w-[29%] px-4 py-3 font-medium">Action plan</th>
+                      <th className="w-[14%] px-4 py-3 font-medium">Completed</th>
+                      <th className="w-[14%] px-4 py-3 text-right font-medium">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {pageTasks.map((task) => (
+                      <tr key={task.id} className="border-t border-line hover:bg-subtle">
+                        <td className="px-4 py-3">
+                          <span className={`priority-badge priority-${task.priority.toLowerCase()}`}>
+                            {priorityMark(task.priority)} {task.priority}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 text-sm font-semibold">{task.subject}</td>
+                        <td className="px-4 py-3 text-sm text-muted">{formatDate(task.dueDate)}</td>
+                        <td className="px-4 py-3 text-sm text-muted">
+                          <p className="line-clamp-2">{task.actionPlan || "—"}</p>
+                        </td>
+                        <td className="px-4 py-3 text-sm text-muted">{formatDate(task.completionDate)}</td>
+                        <td className="px-4 py-3">
+                          <div className="flex justify-end gap-1">
+                            <Button variant="ghost" size="icon" onClick={() => startEdit(task)} aria-label={`Edit ${task.subject}`} title="Edit task">
+                              <Pencil aria-hidden="true" />
+                            </Button>
+                            <Button variant="ghost" size="icon" onClick={() => remove(task.id)} aria-label={`Delete ${task.subject}`} title="Delete task" className="text-danger hover:text-danger">
+                              <Trash2 aria-hidden="true" />
+                            </Button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              <div className="divide-y divide-line md:hidden">
+                {pageTasks.map((task) => (
+                  <article key={task.id} className="p-4">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <span className={`priority-badge priority-${task.priority.toLowerCase()}`}>
+                          {priorityMark(task.priority)} {task.priority}
+                        </span>
+                        <h3 className="mt-2 text-sm font-semibold leading-snug">{task.subject}</h3>
+                      </div>
+                      <div className="flex shrink-0 gap-1">
+                        <Button variant="ghost" size="icon" onClick={() => startEdit(task)} aria-label={`Edit ${task.subject}`}>
+                          <Pencil aria-hidden="true" />
+                        </Button>
+                        <Button variant="ghost" size="icon" onClick={() => remove(task.id)} aria-label={`Delete ${task.subject}`} className="text-danger">
+                          <Trash2 aria-hidden="true" />
+                        </Button>
+                      </div>
+                    </div>
+                    {task.actionPlan ? <p className="mt-2 text-sm leading-relaxed text-muted">{task.actionPlan}</p> : null}
+                    <div className="mt-3 flex flex-wrap gap-x-5 gap-y-1 text-xs text-muted">
+                      <span>Due: {formatDate(task.dueDate)}</span>
+                      <span>Completed: {formatDate(task.completionDate)}</span>
+                    </div>
+                  </article>
+                ))}
+              </div>
+            </>
+          )}
+
+          <div className="flex flex-col gap-3 border-t border-line px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-5">
+            <p className="text-xs text-muted">
+              Showing {firstResult}–{lastResult} of {filteredTasks.length} {filteredTasks.length === 1 ? "task" : "tasks"}
+            </p>
+            <nav className="flex items-center gap-1" aria-label="Task list pagination">
+              <Button variant="outline" size="icon" onClick={() => setPage((value) => Math.max(1, value - 1))} disabled={currentPage === 1} aria-label="Previous page">
+                <ChevronLeft aria-hidden="true" />
+              </Button>
+              {Array.from({ length: totalPages }, (_, index) => index + 1).map((pageNumber) => (
+                <Button
+                  key={pageNumber}
+                  variant={pageNumber === currentPage ? "default" : "outline"}
+                  size="icon"
+                  onClick={() => setPage(pageNumber)}
+                  aria-label={`Page ${pageNumber}`}
+                  aria-current={pageNumber === currentPage ? "page" : undefined}
+                >
+                  {pageNumber}
+                </Button>
+              ))}
+              <Button variant="outline" size="icon" onClick={() => setPage((value) => Math.min(totalPages, value + 1))} disabled={currentPage === totalPages} aria-label="Next page">
+                <ChevronRight aria-hidden="true" />
+              </Button>
+            </nav>
+          </div>
         </section>
 
-        <section ref={formRef} className="mt-6 rounded-lg border border-line bg-surface p-4 sm:p-5">
-          <h2 className="text-base font-semibold">{editingId ? "Edit task" : "Add a task"}</h2>
+        <section ref={formRef} className="mt-5 rounded-lg border border-line bg-surface p-4 sm:p-5" aria-labelledby="task-form-heading">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <h2 id="task-form-heading" className="text-base font-semibold">{editingId ? "Edit task" : "Add a task"}</h2>
+              <p className="mt-0.5 text-xs text-muted">{dueTodayCount} unfinished {dueTodayCount === 1 ? "task is" : "tasks are"} due today</p>
+            </div>
+          </div>
           <div className="mt-4 grid grid-cols-2 gap-3 md:grid-cols-4">
             <label className="col-span-2 block md:col-span-1">
-              <span className="text-[11px] font-medium text-muted">Priority</span>
-              <select
-                value={draft.priority}
-                onChange={(e) => setDraft({ ...draft, priority: e.target.value as Priority })}
-                className="field mt-1.5 font-medium"
-              >
-                {PRIORITIES.map((p) => (
-                  <option key={p} value={p}>
-                    {PRIORITY_META[p].label}
-                  </option>
-                ))}
+              <span className="field-label">Priority</span>
+              <select value={draft.priority} onChange={(event) => setDraft({ ...draft, priority: event.target.value as Priority })} className="field mt-1.5 font-medium">
+                {PRIORITIES.map((priority) => <option key={priority} value={priority}>{PRIORITY_META[priority].label}</option>)}
               </select>
             </label>
             <label className="col-span-2 block md:col-span-1">
-              <span className="text-[11px] font-medium text-muted">Subject</span>
-              <input
-                value={draft.subject}
-                onChange={(e) => setDraft({ ...draft, subject: e.target.value })}
-                className="field mt-1.5"
-                placeholder="What needs doing?"
-              />
+              <span className="field-label">Subject</span>
+              <input value={draft.subject} onChange={(event) => setDraft({ ...draft, subject: event.target.value })} className="field mt-1.5" placeholder="What needs doing?" />
             </label>
             <label className="col-span-1 block">
-              <span className="text-[11px] font-medium text-muted">Due</span>
-              <input
-                type="date"
-                value={draft.dueDate}
-                onChange={(e) => setDraft({ ...draft, dueDate: e.target.value })}
-                className="field mt-1.5"
-              />
+              <span className="field-label">Due date</span>
+              <input type="date" value={draft.dueDate} onChange={(event) => setDraft({ ...draft, dueDate: event.target.value })} className="field mt-1.5" />
             </label>
             <label className="col-span-1 block">
-              <span className="text-[11px] font-medium text-muted">Finished</span>
-              <input
-                type="date"
-                value={draft.completionDate}
-                onChange={(e) => setDraft({ ...draft, completionDate: e.target.value })}
-                className="field mt-1.5"
-              />
+              <span className="field-label">Completion date</span>
+              <input type="date" value={draft.completionDate} onChange={(event) => setDraft({ ...draft, completionDate: event.target.value })} className="field mt-1.5" />
             </label>
             <label className="col-span-2 block md:col-span-4">
-              <span className="text-[11px] font-medium text-muted">Action plan</span>
-              <input
-                value={draft.actionPlan}
-                onChange={(e) => setDraft({ ...draft, actionPlan: e.target.value })}
-                className="field mt-1.5"
-                placeholder="Steps to get it done"
-              />
+              <span className="field-label">Action plan</span>
+              <input value={draft.actionPlan} onChange={(event) => setDraft({ ...draft, actionPlan: event.target.value })} className="field mt-1.5" placeholder="Steps to get it done" />
             </label>
           </div>
-          <div className="mt-4 flex items-center justify-between gap-3">
-            <p className="hidden text-xs text-muted sm:block">{dueTodayCount} unfinished {dueTodayCount === 1 ? "task is" : "tasks are"} due today.</p>
-            <div className="ml-auto flex gap-2">
-              {editingId ? (
-                <button
-                  onClick={() => {
-                    setEditingId(null);
-                    setDraft(emptyDraft);
-                  }}
-                  className="h-11 rounded-lg border border-line bg-surface px-4 text-sm font-semibold text-muted"
-                >
-                  Cancel
-                </button>
-              ) : null}
-              <button
-                onClick={submit}
-                className="h-11 rounded-lg bg-primary px-6 text-sm font-semibold text-primary-foreground transition-opacity hover:opacity-90"
-              >
-                {editingId ? "Save changes" : "Add task"}
-              </button>
-            </div>
+          <div className="mt-4 flex justify-end gap-2">
+            {editingId ? (
+              <Button variant="outline" onClick={() => { setEditingId(null); setDraft(emptyDraft); }}>Cancel</Button>
+            ) : null}
+            <Button onClick={submit}>{editingId ? "Save changes" : "Add task"}</Button>
           </div>
         </section>
-
-        <footer className="mt-8 border-t border-line pt-4 text-center text-xs text-muted">
-          {tasks.length} total {tasks.length === 1 ? "task" : "tasks"}
-        </footer>
       </main>
     </div>
   );
