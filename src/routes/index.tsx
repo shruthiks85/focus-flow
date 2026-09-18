@@ -94,6 +94,8 @@ function Index() {
   const [hydrated, setHydrated] = useState(false);
   const [filter, setFilter] = useState<Priority | "ALL">("ALL");
   const [page, setPage] = useState(1);
+  const [search, setSearch] = useState("");
+  const [searchColumn, setSearchColumn] = useState<SearchColumn>("ALL");
   const [draft, setDraft] = useState<Draft>(emptyDraft);
   const [editingId, setEditingId] = useState<string | null>(null);
   const formRef = useRef<HTMLElement | null>(null);
@@ -113,10 +115,15 @@ function Index() {
     return base;
   }, [tasks]);
 
-  const filteredTasks = useMemo(
-    () => (filter === "ALL" ? tasks : tasks.filter((task) => task.priority === filter)),
-    [tasks, filter],
-  );
+  const filteredTasks = useMemo(() => {
+    const terms = search.toLowerCase().split(/[\s,]+/).filter(Boolean);
+    return tasks.filter((task) => {
+      if (filter !== "ALL" && task.priority !== filter) return false;
+      if (terms.length === 0) return true;
+      const haystack = columnText(task, searchColumn).toLowerCase();
+      return terms.every((term) => haystack.includes(term));
+    });
+  }, [tasks, filter, search, searchColumn]);
   const totalPages = Math.max(1, Math.ceil(filteredTasks.length / PAGE_SIZE));
   const currentPage = Math.min(page, totalPages);
   const pageTasks = filteredTasks.slice(
