@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { ChevronLeft, ChevronRight, Pencil, Plus, Trash2 } from "lucide-react";
+import { ChevronLeft, ChevronRight, Pencil, Plus, Search, Trash2 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -211,12 +211,53 @@ function Index() {
                 <h2 id="tasks-heading" className="text-base font-semibold">Tasks</h2>
                 <p className="mt-0.5 text-xs text-muted">View and manage your priority list</p>
               </div>
-              {filter !== "ALL" ? (
-                <Button variant="ghost" size="sm" onClick={() => chooseFilter("ALL")}>
-                  Clear filter
+              {filter !== "ALL" || search ? (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    chooseFilter("ALL");
+                    setSearch("");
+                    setSearchColumn("ALL");
+                  }}
+                >
+                  Clear filters
                 </Button>
               ) : null}
             </div>
+
+            <div className="mt-4 flex flex-col gap-2 sm:flex-row">
+              <div className="relative flex-1">
+                <Search aria-hidden="true" className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted" />
+                <input
+                  value={search}
+                  onChange={(event) => {
+                    setSearch(event.target.value);
+                    setPage(1);
+                  }}
+                  className="field pl-9"
+                  placeholder="Search tasks — type 2 or more keywords"
+                  aria-label="Search tasks"
+                />
+              </div>
+              <label className="sm:w-52">
+                <span className="sr-only">Search column</span>
+                <select
+                  value={searchColumn}
+                  onChange={(event) => {
+                    setSearchColumn(event.target.value as SearchColumn);
+                    setPage(1);
+                  }}
+                  className="field"
+                  aria-label="Search column"
+                >
+                  {SEARCH_COLUMNS.map((column) => (
+                    <option key={column.value} value={column.value}>{column.label}</option>
+                  ))}
+                </select>
+              </label>
+            </div>
+
 
             <div className="mt-4 flex items-center gap-1 overflow-x-auto pb-1" aria-label="Filter tasks by priority">
               <Button
